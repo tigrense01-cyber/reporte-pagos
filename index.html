@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Pago - Mi WISP</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0088cc; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0077b5; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Reportar Pago</h2>
+    <form id="pagoForm">
+        <input type="text" id="cliente" placeholder="Nombre o ID de Cliente" required>
+        <select id="metodo">
+            <option value="Pago Movil">Pago Móvil</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Zelle">Zelle / Otros</option>
+        </select>
+        <input type="number" id="monto" placeholder="Monto Pagado" required>
+        <input type="text" id="referencia" placeholder="Número de Referencia" required>
+        <button type="submit">Enviar Reporte</button>
+    </form>
+    <p id="estado"></p>
+</div>
+
+<script>
+    const token = "TU_TOKEN_AQUÍ"; // Reemplaza con tu Token de BotFather
+    const chatId = "TU_CHAT_ID_AQUÍ"; // Reemplaza con tu Chat ID
+
+    document.getElementById('pagoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const estado = document.getElementById('estado');
+        estado.innerText = "Enviando...";
+
+        const datos = {
+            cliente: document.getElementById('cliente').value,
+            metodo: document.getElementById('metodo').value,
+            monto: document.getElementById('monto').value,
+            ref: document.getElementById('referencia').value
+        };
+
+        const mensaje = `🔔 *Nuevo Reporte de Pago*%0A👤 *Cliente:* ${datos.cliente}%0A💰 *Monto:* ${datos.monto}%0A💳 *Método:* ${datos.metodo}%0A🔢 *Ref:* ${datos.ref}`;
+
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${mensaje}&parse_mode=Markdown`)
+        .then(response => {
+            if(response.ok) {
+                estado.innerText = "✅ Reporte enviado con éxito.";
+                document.getElementById('pagoForm').reset();
+            } else {
+                estado.innerText = "❌ Error al enviar. Intente de nuevo.";
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
