@@ -1,84 +1,64 @@
 <script>
-    // --- CONFIGURACIÓN ---
+    // Configuración
     const CONFIG = {
-        telegramToken: "6554753247:AAFUFA8uZgEhDXOlHCwz4Hcr2ORI-qgVBOY",
+        token: "6554753247:AAFUFA8uZgEhDXOlHCwz4Hcr2ORI-qgVBOY",
         chatId: "2052943784",
         scriptURL: 'https://script.google.com/macros/s/AKfycbwmL2cspMneufDpVio6BHH5YjOkph4VwsYDLKQqTmR-3rlH7p8x9T-vjWrzG_w8heXA/exec'
     };
 
-    // Función auxiliar para copiar al portapapeles
+    // Función para copiar texto
     function copyText(text, btn) {
-        if (!navigator.clipboard) return;
         navigator.clipboard.writeText(text).then(() => {
             const originalText = btn.innerText;
-            btn.innerText = "¡Copiado!";
-            btn.style.backgroundColor = "#22c55e";
-            btn.style.color = "white";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.backgroundColor = "";
-                btn.style.color = "";
-            }, 1500);
+            btn.innerText = "¡Listo!";
+            setTimeout(() => { btn.innerText = originalText; }, 1500);
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const pagoForm = document.getElementById('pagoForm');
-        const btnSubmit = document.getElementById('submit-btn');
-        const estadoMsg = document.getElementById('estado');
+    // Esperar a que cargue la página
+    window.onload = function() {
+        const form = document.getElementById('pagoForm');
+        const estado = document.getElementById('estado');
+        const btn = document.getElementById('submit-btn');
 
-        if (!pagoForm) return;
+        if(!form) return;
 
-        pagoForm.addEventListener('submit', async (e) => {
+        form.onsubmit = function(e) {
             e.preventDefault();
 
-            // Bloquear UI
-            btnSubmit.disabled = true;
-            estadoMsg.style.color = "#1877F2";
-            estadoMsg.innerText = "Procesando reporte...";
+            btn.disabled = true;
+            estado.innerText = "Enviando...";
+            estado.style.color = "blue";
 
-            const formData = new FormData(pagoForm);
-            const data = Object.fromEntries(formData.entries());
+            const formData = new FormData(form);
+            
+            // Datos para Telegram
+            const c = document.getElementById('cliente').value;
+            const t = document.getElementById('telefono').value;
+            const m = document.getElementById('metodo').value;
+            const v = document.getElementById('monto').value;
+            const r = document.getElementById('referencia').value;
 
-            // 1. Formatear mensaje para Telegram
-            const textoTelegram = [
-                "🏦 *NUEVO REPORTE DE PAGO*",
-                "",
-                `👤 *Cliente:* ${data.cliente}`,
-                `📞 *Teléfono:* ${data.telefono}`,
-                `💳 *Método:* ${data.metodo}`,
-                `💰 *Monto:* ${data.monto}`,
-                `🔢 *Referencia:* ${data.referencia}`
-            ].join("%0A");
+            const msg = `🏦 *NUEVO PAGO*%0A👤 ${c}%0A📞 ${t}%0A💳 ${m}%0A💰 ${v}%0A🔢 ${r}`;
 
-            try {
-                // 2. Envío prioritario a Telegram
-                const telegramRes = await fetch(
-                    `https://api.telegram.org/bot${CONFIG.telegramToken}/sendMessage?chat_id=${CONFIG.chatId}&text=${textoTelegram}&parse_mode=Markdown`
-                );
-
-                if (!telegramRes.ok) throw new Error('Fallo Telegram');
-
-                // 3. Envío a Google Sheets (en segundo plano)
-                // Usamos 'no-cors' para evitar errores de políticas de origen
-                fetch(CONFIG.scriptURL, { 
-                    method: 'POST', 
-                    body: formData, 
-                    mode: 'no-cors' 
-                });
-
-                // Éxito
-                estadoMsg.style.color = "#22c55e";
-                estadoMsg.innerText = "✅ ¡Reporte enviado con éxito!";
-                pagoForm.reset();
-
-            } catch (err) {
-                console.error('Error en el proceso:', err);
-                estadoMsg.style.color = "#dc3545";
-                estadoMsg.innerText = "❌ Error al enviar. Por favor, reintente.";
-            } finally {
-                btnSubmit.disabled = false;
-            }
-        });
-    });
+            // Enviar a Telegram
+            fetch(`https://api.telegram.org/bot${CONFIG.token}/sendMessage?chat_id=${CONFIG.chatId}&text=${msg}&parse_mode=Markdown`)
+            .then(() => {
+                // Enviar a Google
+                return fetch(CONFIG.scriptURL, { method: 'POST', body: formData, mode: 'no-cors' });
+            })
+            .then(() => {
+                estado.innerText = "✅ Enviado correctamente";
+                estado.style.color = "green";
+                form.reset();
+            })
+            .catch(() => {
+                estado.innerText = "❌ Error al enviar";
+                estado.style.color = "red";
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+        };
+    };
 </script>
