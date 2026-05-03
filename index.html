@@ -1,17 +1,62 @@
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Hoja 1");
-  
-  // Obtenemos los datos del formulario (FormData)
-  var fecha = new Date();
-  var nombre = e.parameter.cliente;
-  var telefono = e.parameter.telefono;
-  var metodo = e.parameter.metodo;
-  var monto = e.parameter.monto;
-  var referencia = e.parameter.referencia;
+<script>
+    // --- CONFIGURACIÓN ACTUALIZADA ---
+    const token = "6554753247:AAFUFA8uZgEhDXOlHCwz4Hcr2ORI-qgVBOY"; 
+    const chatId = "2052943784"; 
+    // Esta es tu nueva URL de la Versión 5
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwmL2cspMneufDpVio6BHH5YjOkph4VwsYDLKQqTmR-3rlH7p8x9T-vjWrzG_w8heXA/exec';
 
-  // Insertamos la fila en la planilla
-  sheet.appendRow([fecha, nombre, telefono, metodo, monto, referencia]);
-  
-  // Devolvemos una respuesta de éxito
-  return ContentService.createTextOutput("Éxito").setMimeType(ContentService.MimeType.TEXT);
-}
+    function copyText(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const oldText = btn.innerText;
+            btn.innerText = "¡OK!";
+            btn.style.background = "#22c55e";
+            btn.style.color = "white";
+            setTimeout(() => {
+                btn.innerText = oldText;
+                btn.style.background = "#e2e8f0";
+                btn.style.color = "#1877F2";
+            }, 1200);
+        });
+    }
+
+    const form = document.getElementById('pagoForm');
+    const btnSubmit = document.getElementById('submit-btn');
+    const estado = document.getElementById('estado');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        estado.style.color = "#1877F2";
+        estado.innerText = "Enviando reporte...";
+        btnSubmit.disabled = true;
+
+        const formData = new FormData(form);
+        const cliente = document.getElementById('cliente').value;
+        const tlf = document.getElementById('telefono').value;
+        const metodo = document.getElementById('metodo').value;
+        const monto = document.getElementById('monto').value;
+        const ref = document.getElementById('referencia').value;
+
+        // 1. Envío a Telegram
+        const mensajeTelegram = `🏦 *NUEVO REPORTE DE PAGO*%0A%0A👤 *Cliente:* ${cliente}%0A📞 *Tlf:* ${tlf}%0A💳 *Método:* ${metodo}%0A💰 *Monto:* ${monto}%0A🔢 *Ref:* ${ref}`;
+        
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${mensajeTelegram}&parse_mode=Markdown`)
+        .then(() => {
+            // 2. Envío a Google Sheets (con la URL nueva)
+            return fetch(scriptURL, { method: 'POST', body: formData, mode: 'no-cors'});
+        })
+        .then(() => {
+            estado.style.color = "#22c55e";
+            estado.innerText = "✅ Reporte enviado con éxito.";
+            form.reset();
+        })
+        .catch(error => {
+            estado.style.color = "#dc3545";
+            estado.innerText = "❌ Error al procesar. Intente de nuevo.";
+            console.error('Error!', error);
+        })
+        .finally(() => {
+            btnSubmit.disabled = false;
+        });
+    });
+</script>
