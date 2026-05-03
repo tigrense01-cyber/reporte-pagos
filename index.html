@@ -1,64 +1,61 @@
 <script>
-    // Configuración
-    const CONFIG = {
-        token: "6554753247:AAFUFA8uZgEhDXOlHCwz4Hcr2ORI-qgVBOY",
-        chatId: "2052943784",
-        scriptURL: 'https://script.google.com/macros/s/AKfycbwmL2cspMneufDpVio6BHH5YjOkph4VwsYDLKQqTmR-3rlH7p8x9T-vjWrzG_w8heXA/exec'
-    };
+    // --- CONFIGURACIÓN ---
+    const token = "6554753247:AAFUFA8uZgEhDXOlHCwz4Hcr2ORI-qgVBOY"; 
+    const chatId = "2052943784"; 
 
-    // Función para copiar texto
     function copyText(text, btn) {
         navigator.clipboard.writeText(text).then(() => {
-            const originalText = btn.innerText;
-            btn.innerText = "¡Listo!";
-            setTimeout(() => { btn.innerText = originalText; }, 1500);
+            const oldText = btn.innerText;
+            btn.innerText = "¡OK!";
+            btn.style.background = "#22c55e";
+            btn.style.color = "white";
+            setTimeout(() => {
+                btn.innerText = oldText;
+                btn.style.background = "#e2e8f0";
+                btn.style.color = "#1877F2";
+            }, 1200);
         });
     }
 
-    // Esperar a que cargue la página
-    window.onload = function() {
-        const form = document.getElementById('pagoForm');
-        const estado = document.getElementById('estado');
-        const btn = document.getElementById('submit-btn');
+    const form = document.getElementById('pagoForm');
+    const btnSubmit = document.getElementById('submit-btn');
+    const estado = document.getElementById('estado');
 
-        if(!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        estado.style.color = "#1877F2";
+        estado.innerText = "Enviando reporte...";
+        btnSubmit.disabled = true;
 
-        form.onsubmit = function(e) {
-            e.preventDefault();
+        // Captura de datos
+        const cliente = document.getElementById('cliente').value;
+        const tlf = document.getElementById('telefono').value;
+        const metodo = document.getElementById('metodo').value;
+        const monto = document.getElementById('monto').value;
+        const ref = document.getElementById('referencia').value;
 
-            btn.disabled = true;
-            estado.innerText = "Enviando...";
-            estado.style.color = "blue";
-
-            const formData = new FormData(form);
-            
-            // Datos para Telegram
-            const c = document.getElementById('cliente').value;
-            const t = document.getElementById('telefono').value;
-            const m = document.getElementById('metodo').value;
-            const v = document.getElementById('monto').value;
-            const r = document.getElementById('referencia').value;
-
-            const msg = `🏦 *NUEVO PAGO*%0A👤 ${c}%0A📞 ${t}%0A💳 ${m}%0A💰 ${v}%0A🔢 ${r}`;
-
-            // Enviar a Telegram
-            fetch(`https://api.telegram.org/bot${CONFIG.token}/sendMessage?chat_id=${CONFIG.chatId}&text=${msg}&parse_mode=Markdown`)
-            .then(() => {
-                // Enviar a Google
-                return fetch(CONFIG.scriptURL, { method: 'POST', body: formData, mode: 'no-cors' });
-            })
-            .then(() => {
-                estado.innerText = "✅ Enviado correctamente";
-                estado.style.color = "green";
+        // Formato del mensaje para Telegram
+        const mensajeTelegram = `🏦 *NUEVO REPORTE DE PAGO*%0A%0A👤 *Cliente:* ${cliente}%0A📞 *Tlf:* ${tlf}%0A💳 *Método:* ${metodo}%0A💰 *Monto:* ${monto}%0A🔢 *Ref:* ${ref}`;
+        
+        // Envío directo a Telegram
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${mensajeTelegram}&parse_mode=Markdown`)
+        .then(res => {
+            if(res.ok) {
+                estado.style.color = "#22c55e";
+                estado.innerText = "✅ Reporte enviado con éxito.";
                 form.reset();
-            })
-            .catch(() => {
-                estado.innerText = "❌ Error al enviar";
-                estado.style.color = "red";
-            })
-            .finally(() => {
-                btn.disabled = false;
-            });
-        };
-    };
+            } else {
+                throw new Error('Error en Telegram');
+            }
+        })
+        .catch(error => {
+            estado.style.color = "#dc3545";
+            estado.innerText = "❌ Error al enviar. Intente de nuevo.";
+            console.error('Error!', error);
+        })
+        .finally(() => {
+            btnSubmit.disabled = false;
+        });
+    });
 </script>
