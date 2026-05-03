@@ -42,7 +42,6 @@
             margin-bottom: 20px;
         }
 
-        /* DISEÑO DATOS PAGO */
         .payment-card {
             background: #f1f5f9;
             border-radius: 16px;
@@ -75,7 +74,6 @@
             cursor: pointer;
         }
 
-        /* FORMULARIO */
         label {
             font-size: 11px;
             font-weight: 700;
@@ -118,6 +116,11 @@
             box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
         }
 
+        button[type="submit"]:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
         #estado {
             text-align: center;
             font-size: 13px;
@@ -136,7 +139,6 @@
 <div class="card">
     <h2>Reportar Pago</h2>
 
-    <!-- DATOS DE PAGO COPIABLES -->
     <div class="payment-card">
         <div style="font-size:10px; font-weight:800; color:var(--color-main); margin-bottom:6px; text-align:center; letter-spacing:1px;">DATOS DE PAGO MÓVIL</div>
         
@@ -165,37 +167,37 @@
         </div>
     </div>
 
-    <!-- FORMULARIO DE REPORTE -->
-    <form id="pagoForm">
+    <form id="pagoForm" name="google-sheet">
         <label>Nombre del Cliente</label>
-        <input type="text" id="cliente" placeholder="Ej: Juan Pérez" required>
+        <input type="text" name="Nombre" id="cliente" placeholder="Ej: Juan Pérez" required>
 
         <label>Teléfono de Contacto</label>
-        <input type="tel" id="telefono" placeholder="Ej: 04121234567" required>
+        <input type="tel" name="Telefono" id="telefono" placeholder="Ej: 04121234567" required>
         
         <label>Método de Pago</label>
-        <select id="metodo">
+        <select name="Metodo" id="metodo">
             <option value="Pago Movil">Pago Móvil</option>
             <option value="Transferencia">Transferencia</option>
             <option value="Zelle / Divisas">Zelle / Divisas</option>
         </select>
         
         <label>Monto de la Operación</label>
-        <input type="number" step="0.01" id="monto" placeholder="Monto enviado" required>
+        <input type="number" step="0.01" name="Monto" id="monto" placeholder="Monto enviado" required>
         
         <label>Número de Referencia</label>
-        <input type="text" id="referencia" class="campo-referencia" placeholder="Los últimos 6 dígitos" required>
+        <input type="text" name="Referencia" id="referencia" class="campo-referencia" placeholder="Los últimos 6 dígitos" required>
         
-        <button type="submit">ENVIAR REPORTE</button>
+        <button type="submit" id="submit-btn">ENVIAR REPORTE</button>
     </form>
     
     <p id="estado"></p>
 </div>
 
 <script>
-    // Configuración Telegram
+    // --- CONFIGURACIÓN ---
     const token = "6554753247:AAFUFA8uZgEhDXOlHCwz4Hcr2ORI-qgVBOY"; 
     const chatId = "2052943784"; 
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxgRfZM-E9QM7RIM1JUOFwQqT_9YUeo1zzw5D5BxaME1xD1uk4eb2ivXUCVGxb7xjy_/exec';
 
     // Función Copiar
     function copyText(text, btn) {
@@ -212,33 +214,49 @@
         });
     }
 
-    // Envío de Formulario
-    document.getElementById('pagoForm').addEventListener('submit', function(e) {
+    const form = document.getElementById('pagoForm');
+    const btnSubmit = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
+        
         const estado = document.getElementById('estado');
         estado.style.color = "#1877F2";
-        estado.innerText = "Enviando reporte...";
+        estado.innerText = "Procesando reporte...";
+        btnSubmit.disabled = true;
 
-        const datos = {
-            cliente: document.getElementById('cliente').value,
-            tlf: document.getElementById('telefono').value,
-            metodo: document.getElementById('metodo').value,
-            monto: document.getElementById('monto').value,
-            ref: document.getElementById('referencia').value
-        };
+        const cliente = document.getElementById('cliente').value;
+        const tlf = document.getElementById('telefono').value;
+        const metodo = document.getElementById('metodo').value;
+        const monto = document.getElementById('monto').value;
+        const ref = document.getElementById('referencia').value;
 
-        const mensaje = `🏦 *NUEVO REPORTE DE PAGO*%0A%0A👤 *Cliente:* ${datos.cliente}%0A📞 *Tlf:* ${datos.tlf}%0A💳 *Método:* ${datos.metodo}%0A💰 *Monto:* ${datos.monto}%0A🔢 *Ref:* ${datos.ref}`;
+        // 1. Envío a Telegram
+        const mensajeTelegram = `🏦 *NUEVO REPORTE DE PAGO*%0A%0A👤 *Cliente:* ${cliente}%0A📞 *Tlf:* ${tlf}%0A💳 *Método:* ${metodo}%0A💰 *Monto:* ${monto}%0A🔢 *Ref:* ${ref}`;
+        
+        const promiseTelegram = fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${mensajeTelegram}&parse_mode=Markdown`);
 
-        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${mensaje}&parse_mode=Markdown`)
-        .then(response => {
-            if(response.ok) {
+        // 2. Envío a Google Sheets
+        const promiseSheets = fetch(scriptURL, { method: 'POST', body: new FormData(form)});
+
+        Promise.all([promiseTelegram, promiseSheets])
+        .then(responses => {
+            // Verificamos si Telegram respondió bien (Sheets suele devolver éxito aunque haya errores de CORS, por eso priorizamos Telegram)
+            if(responses[0].ok) {
                 estado.style.color = "#22c55e";
-                estado.innerText = "✅ Reporte enviado con éxito.";
-                document.getElementById('pagoForm').reset();
+                estado.innerText = "✅ Reporte guardado y enviado con éxito.";
+                form.reset();
             } else {
-                estado.style.color = "#dc3545";
-                estado.innerText = "❌ Error al enviar reporte.";
+                throw new Error("Error en el envío");
             }
+        })
+        .catch(error => {
+            estado.style.color = "#dc3545";
+            estado.innerText = "❌ Error al procesar. Intente de nuevo.";
+            console.error('Error!', error.message);
+        })
+        .finally(() => {
+            btnSubmit.disabled = false;
         });
     });
 </script>
