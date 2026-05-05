@@ -136,7 +136,6 @@
 <div class="card">
     <h2>Reportar Pago</h2>
 
-    <!-- DATOS DE PAGO COPIABLES -->
     <div class="payment-card">
         <div style="font-size:10px; font-weight:800; color:var(--color-main); margin-bottom:6px; text-align:center; letter-spacing:1px;">DATOS DE PAGO MÓVIL</div>
         
@@ -165,7 +164,6 @@
         </div>
     </div>
 
-    <!-- FORMULARIO DE REPORTE -->
     <form id="pagoForm">
         <label>Nombre del Cliente</label>
         <input type="text" id="cliente" placeholder="Ej: Juan Pérez" required>
@@ -180,8 +178,8 @@
             <option value="Zelle / Divisas">Zelle / Divisas</option>
         </select>
         
-        <<label>Monto de la Operación</label>
-<input type="text" id="monto" placeholder="Ej: 14.541,55" inputmode="decimal" required>
+        <label>Monto de la Operación</label>
+        <input type="text" id="monto" placeholder="Ej: 1.250,00" inputmode="decimal" required>
         
         <label>Número de Referencia</label>
         <input type="text" id="referencia" class="campo-referencia" placeholder="Los últimos 6 dígitos" required>
@@ -193,11 +191,9 @@
 </div>
 
 <script>
-    // Configuración Telegram
     const token = "8276591733:AAHUmQLPnCUpxvAex91KrhDRAxI62lzQ4sQ"; 
     const chatId = "2052943784"; 
 
-    // Función Copiar
     function copyText(text, btn) {
         navigator.clipboard.writeText(text).then(() => {
             const oldText = btn.innerText;
@@ -212,12 +208,16 @@
         });
     }
 
-    // Envío de Formulario
     document.getElementById('pagoForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const estado = document.getElementById('estado');
         estado.style.color = "#1877F2";
         estado.innerText = "Enviando reporte...";
+
+        // Obtener Fecha y Hora actual
+        const ahora = new Date();
+        const fecha = ahora.toLocaleDateString('es-VE'); 
+        const hora = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
 
         const datos = {
             cliente: document.getElementById('cliente').value,
@@ -227,9 +227,12 @@
             ref: document.getElementById('referencia').value
         };
 
-        const mensaje = `🏦 *NUEVO REPORTE DE PAGO*%0A%0A👤 *Cliente:* ${datos.cliente}%0A📞 *Tlf:* ${datos.tlf}%0A💳 *Método:* ${datos.metodo}%0A💰 *Monto:* ${datos.monto}%0A🔢 *Ref:* ${datos.ref}`;
+        // Construcción del mensaje con formato para Telegram
+        const textoMensaje = `🏦 *NUEVO REPORTE DE PAGO*\n\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${hora}\n------------------------------\n👤 *Cliente:* ${datos.cliente}\n📞 *Tlf:* ${datos.tlf}\n💳 *Método:* ${datos.metodo}\n💰 *Monto:* ${datos.monto}\n🔢 *Ref:* ${datos.ref}`;
 
-        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${mensaje}&parse_mode=Markdown`)
+        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=Markdown`;
+
+        fetch(url)
         .then(response => {
             if(response.ok) {
                 estado.style.color = "#22c55e";
@@ -239,6 +242,10 @@
                 estado.style.color = "#dc3545";
                 estado.innerText = "❌ Error al enviar reporte.";
             }
+        })
+        .catch(error => {
+            estado.style.color = "#dc3545";
+            estado.innerText = "❌ Error de conexión.";
         });
     });
 </script>
