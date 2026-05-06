@@ -227,8 +227,12 @@
             ref: document.getElementById('referencia').value
         };
 
+        const telefonoLimpio = datos.tlf.replace(/\D/g, '');
+        const telefonoWhatsApp = telefonoLimpio.startsWith('0') ? `58${telefonoLimpio.slice(1)}` : telefonoLimpio;
+        const linkWhatsApp = `https://wa.me/${telefonoWhatsApp}`;
+
         // Construcción del mensaje con formato para Telegram
-        const textoMensaje = `🏦 *NUEVO REPORTE DE PAGO*\n\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${hora}\n------------------------------\n👤 *Cliente:* ${datos.cliente}\n📞 *Tlf:* ${datos.tlf}\n💳 *Método:* ${datos.metodo}\n💰 *Monto:* ${datos.monto}\n🔢 *Ref:* ${datos.ref}`;
+        const textoMensaje = `🏦 *NUEVO REPORTE DE PAGO*\n\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${hora}\n------------------------------\n👤 *Cliente:* ${datos.cliente}\n📞 *Tlf:* [${datos.tlf}](${linkWhatsApp})\n💳 *Método:* ${datos.metodo}\n💰 *Monto:* ${datos.monto}\n🔢 *Ref:* ${datos.ref}`;
 
         const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=Markdown`;
 
