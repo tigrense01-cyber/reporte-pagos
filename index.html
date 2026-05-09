@@ -243,7 +243,7 @@
         // Construcción del mensaje con formato para Telegram usando HTML
         const textoMensaje = `🏦 <b>NUEVO REPORTE DE PAGO</b>\n\n📅 <b>Fecha:</b> ${escapeHTML(fecha)}\n⏰ <b>Hora:</b> ${escapeHTML(hora)}\n------------------------------\n👤 <b>Cliente:</b> ${escapeHTML(datos.cliente)}\n📞 <b>Tlf:</b> <a href="${linkWhatsApp}">${escapeHTML(datos.tlf)}</a>\n💳 <b>Método:</b> ${escapeHTML(datos.metodo)}\n💰 <b>Monto:</b> ${escapeHTML(datos.monto)}\n🔢 <b>Ref:</b> ${escapeHTML(datos.ref)}`;
 
-        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=HTML`;
+        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=HTML&disable_web_page_preview=true`;
 
         fetch(url)
         .then(response => {
