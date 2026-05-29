@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reporte de Pago - WIFI_PIN_ACCESS</title>
+    <title>Reporte de Pago - Mi WISP</title>
     <style>
         :root {
             --color-main: #1877F2;
@@ -137,14 +137,14 @@
     <h2>Reportar Pago</h2>
 
     <div class="payment-card">
-        <div style="font-size:10px; font-weight:800; color:var(--color-main); margin-bottom:6px; text-align:center; letter-spacing:1px;">DATOS DE PAGO MÓVIL</div>
+        <div style="font-size:12px; font-weight:800; color:var(--color-main); margin-bottom:6px; text-align:center; letter-spacing:1px;">DATOS DE PAGO MÓVIL</div>
         
         <div class="cashea-row">
             <div>
                 <div class="label-cashea">Banco</div>
                 <div class="value-cashea">BVC (0104)</div>
             </div>
-            <button class="btn-copy-mini" onclick="copyText('0104', this)">COPIAR</button>
+            <button class="btn-copy-mini" onclick="copySingle('0104', this)">COPIAR</button>
         </div>
 
         <div class="cashea-row">
@@ -152,7 +152,7 @@
                 <div class="label-cashea">Cédula</div>
                 <div class="value-cashea">V-14.560.040</div>
             </div>
-            <button class="btn-copy-mini" onclick="copyText('14560040', this)">COPIAR</button>
+            <button class="btn-copy-mini" onclick="copySingle('14560040', this)">COPIAR</button>
         </div>
 
         <div class="cashea-row">
@@ -160,8 +160,13 @@
                 <div class="label-cashea">Teléfono</div>
                 <div class="value-cashea">0424-8808670</div>
             </div>
-            <button class="btn-copy-mini" onclick="copyText('04248808670', this)">COPIAR</button>
+            <button class="btn-copy-mini" onclick="copySingle('04248808670', this)">COPIAR</button>
         </div>
+
+        <div style="display:flex; justify-content:flex-start; margin:6px 0 0 0;">
+            <button class="btn-copy-mini" onclick="copyAllMobile(this)">COPIAR TODO</button>
+        </div>
+
     </div>
 
     <form id="pagoForm">
@@ -194,7 +199,7 @@
     const token = "8276591733:AAHUmQLPnCUpxvAex91KrhDRAxI62lzQ4sQ"; 
     const chatId = "2052943784"; 
 
-    function copyText(text, btn) {
+    function copySingle(text, btn) {
         navigator.clipboard.writeText(text).then(() => {
             const oldText = btn.innerText;
             btn.innerText = "¡OK!";
@@ -206,6 +211,19 @@
                 btn.style.color = "#1877F2";
             }, 1200);
         });
+    }
+
+    function copyAllMobile(button) {
+        // Formato: 0104 04248808670 14560040
+        // (Banco Teléfono Cédula - Todo limpio)
+        const textToCopy = "0104 04248808670 14560040";
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalText = button.innerText;
+            button.innerText = "¡TODO COPIADO!";
+            button.style.background = "#28a745";
+            setTimeout(() => { button.innerText = originalText; button.style.background = ""; }, 1500);
+        }).catch(err => console.error('Error:', err));
     }
 
     document.getElementById('pagoForm').addEventListener('submit', function(e) {
@@ -243,7 +261,7 @@
         // Construcción del mensaje con formato para Telegram usando HTML
         const textoMensaje = `🏦 <b>NUEVO REPORTE DE PAGO</b>\n\n📅 <b>Fecha:</b> ${escapeHTML(fecha)}\n⏰ <b>Hora:</b> ${escapeHTML(hora)}\n------------------------------\n👤 <b>Cliente:</b> ${escapeHTML(datos.cliente)}\n📞 <b>Tlf:</b> <a href="${linkWhatsApp}">${escapeHTML(datos.tlf)}</a>\n💳 <b>Método:</b> ${escapeHTML(datos.metodo)}\n💰 <b>Monto:</b> ${escapeHTML(datos.monto)}\n🔢 <b>Ref:</b> ${escapeHTML(datos.ref)}`;
 
-        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=HTML&disable_web_page_preview=true`;
+        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=HTML`;
 
         fetch(url)
         .then(response => {
