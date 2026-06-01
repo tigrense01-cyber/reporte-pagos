@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reporte de Pago - Mi WISP</title>
+    <title>Reporte de Pago - Pin_Access</title>
     <style>
         :root {
             --color-main: #1877F2;
@@ -39,7 +39,21 @@
             text-align: center;
             color: var(--text-dark);
             font-size: 1.4rem;
-            margin-bottom: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* TEXTO DINÁMICO TASA BCV */
+        .tasa-container {
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        #valorTasa {
+            color: var(--color-success);
+            font-weight: 800;
         }
 
         /* DISEÑO DATOS PAGO */
@@ -73,6 +87,7 @@
             font-weight: bold;
             color: var(--color-main);
             cursor: pointer;
+            transition: background 0.2s, color 0.2s;
         }
 
         /* FORMULARIO */
@@ -135,6 +150,7 @@
 
 <div class="card">
     <h2>Reportar Pago</h2>
+    <div class="tasa-container">Tasa Oficial BCV: <span id="valorTasa">Cargando...</span></div>
 
     <div class="payment-card">
         <div style="font-size:12px; font-weight:800; color:var(--color-main); margin-bottom:6px; text-align:center; letter-spacing:1px;">DATOS DE PAGO MÓVIL</div>
@@ -199,6 +215,25 @@
     const token = "8276591733:AAHUmQLPnCUpxvAex91KrhDRAxI62lzQ4sQ"; 
     const chatId = "2052943784"; 
 
+    // OBTENER LA TASA OFICIAL BCV AUTOMÁTICAMENTE AL CARGAR LA PÁGINA
+    window.addEventListener('DOMContentLoaded', () => {
+        fetch('https://dolarapi.com/v1/ve/monedas/usd')
+            .then(response => response.json())
+            .then(data => {
+                if(data && data.promedio) {
+                    // Formatear a estilo de moneda venezolana (ej: 554,43)
+                    const tasaFormateada = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.promedio);
+                    document.getElementById('valorTasa').innerText = `${tasaFormateada} VES`;
+                } else {
+                    document.getElementById('valorTasa').innerText = "No disponible";
+                }
+            })
+            .catch(error => {
+                console.error("Error cargando API BCV:", error);
+                document.getElementById('valorTasa').innerText = "Error al cargar";
+            });
+    });
+
     function copySingle(text, btn) {
         navigator.clipboard.writeText(text).then(() => {
             const oldText = btn.innerText;
@@ -214,15 +249,19 @@
     }
 
     function copyAllMobile(button) {
-        // Formato: 0104 04248808670 14560040
-        // (Banco Teléfono Cédula - Todo limpio)
         const textToCopy = "0104 04248808670 14560040";
         
         navigator.clipboard.writeText(textToCopy).then(() => {
             const originalText = button.innerText;
             button.innerText = "¡TODO COPIADO!";
-            button.style.background = "#28a745";
-            setTimeout(() => { button.innerText = originalText; button.style.background = ""; }, 1500);
+            button.style.background = "#22c55e";
+            button.style.color = "white";
+            
+            setTimeout(() => { 
+                button.innerText = originalText; 
+                button.style.background = "#e2e8f0"; 
+                button.style.color = "#1877F2";
+            }, 1200);
         }).catch(err => console.error('Error:', err));
     }
 
@@ -232,7 +271,6 @@
         estado.style.color = "#1877F2";
         estado.innerText = "Enviando reporte...";
 
-        // Obtener Fecha y Hora actual
         const ahora = new Date();
         const fecha = ahora.toLocaleDateString('es-VE'); 
         const hora = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -258,12 +296,22 @@
                 .replace(/'/g, '&#39;');
         }
 
-        // Construcción del mensaje con formato para Telegram usando HTML
         const textoMensaje = `🏦 <b>NUEVO REPORTE DE PAGO</b>\n\n📅 <b>Fecha:</b> ${escapeHTML(fecha)}\n⏰ <b>Hora:</b> ${escapeHTML(hora)}\n------------------------------\n👤 <b>Cliente:</b> ${escapeHTML(datos.cliente)}\n📞 <b>Tlf:</b> <a href="${linkWhatsApp}">${escapeHTML(datos.tlf)}</a>\n💳 <b>Método:</b> ${escapeHTML(datos.metodo)}\n💰 <b>Monto:</b> ${escapeHTML(datos.monto)}\n🔢 <b>Ref:</b> ${escapeHTML(datos.ref)}`;
 
-        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textoMensaje)}&parse_mode=HTML`;
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
-        fetch(url)
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: textoMensaje,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            })
+        })
         .then(response => {
             if(response.ok) {
                 estado.style.color = "#22c55e";
