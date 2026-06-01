@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reporte de Pago - Mi WISP</title>
+    <title>Reporte de Pago - Pin_Access</title>
     <style>
         :root {
             --color-main: #1877F2;
@@ -185,12 +185,12 @@
 
     </div>
 
-    <form id="pagoForm">
+    <form id="pagoForm" autocomplete="off">
         <label>Nombre del Cliente</label>
-        <input type="text" id="cliente" placeholder="Ej: Juan Pérez" required>
+        <input type="text" id="cliente" placeholder="Ej: Juan Pérez" autocomplete="one-time-code" required>
 
         <label>Teléfono de Contacto</label>
-        <input type="tel" id="telefono" placeholder="Ej: 04121234567" required>
+        <input type="tel" id="telefono" placeholder="Ej: 04121234567" autocomplete="one-time-code" required>
         
         <label>Método de Pago</label>
         <select id="metodo">
@@ -200,10 +200,10 @@
         </select>
         
         <label>Monto de la Operación</label>
-        <input type="text" id="monto" placeholder="Ej: 1.250,00" inputmode="decimal" required>
+        <input type="text" id="monto" placeholder="Ej: 1.250,00" inputmode="decimal" autocomplete="off" required>
         
         <label>Número de Referencia</label>
-        <input type="text" id="referencia" class="campo-referencia" placeholder="Los últimos 6 dígitos" required>
+        <input type="text" id="referencia" class="campo-referencia" placeholder="Los últimos 6 dígitos" autocomplete="off" required>
         
         <button type="submit">ENVIAR REPORTE</button>
     </form>
@@ -215,7 +215,6 @@
     const token = "8276591733:AAHUmQLPnCUpxvAex91KrhDRAxI62lzQ4sQ"; 
     const chatId = "2052943784"; 
 
-    // OBTENER LA TASA OFICIAL BCV AUTOMÁTICAMENTE AL CARGAR LA PÁGINA
     window.addEventListener('DOMContentLoaded', () => {
         fetch('https://ve.dolarapi.com/v1/dolares/oficial')
             .then(response => {
@@ -224,7 +223,6 @@
             })
             .then(data => {
                 if(data && data.promedio) {
-                    // Formatear a estilo de moneda venezolana (ej: 554,43)
                     const tasaFormateada = new Intl.NumberFormat('es-VE', { 
                         minimumFractionDigits: 2, 
                         maximumFractionDigits: 2 
