@@ -160,7 +160,7 @@
                 <div class="label-cashea">Banco</div>
                 <div class="value-cashea">BVC (0104)</div>
             </div>
-            <button class="btn-copy-mini" onclick="copySingle('0104', this)">COPIAR</button>
+            <button class="btn-copy-mini" onClick="copySingle('0104', this)">COPIAR</button>
         </div>
 
         <div class="cashea-row">
@@ -168,7 +168,7 @@
                 <div class="label-cashea">Cédula</div>
                 <div class="value-cashea">V-14.560.040</div>
             </div>
-            <button class="btn-copy-mini" onclick="copySingle('14560040', this)">COPIAR</button>
+            <button class="btn-copy-mini" onClick="copySingle('14560040', this)">COPIAR</button>
         </div>
 
         <div class="cashea-row">
@@ -176,11 +176,11 @@
                 <div class="label-cashea">Teléfono</div>
                 <div class="value-cashea">0424-8808670</div>
             </div>
-            <button class="btn-copy-mini" onclick="copySingle('04248808670', this)">COPIAR</button>
+            <button class="btn-copy-mini" onClick="copySingle('04248808670', this)">COPIAR</button>
         </div>
 
         <div style="display:flex; justify-content:flex-start; margin:6px 0 0 0;">
-            <button class="btn-copy-mini" onclick="copyAllMobile(this)">COPIAR TODO</button>
+            <button class="btn-copy-mini" onClick="copyAllMobile(this)">COPIAR TODO</button>
         </div>
 
     </div>
@@ -212,8 +212,15 @@
 </div>
 
 <script>
+    // --- Configuración de Telegram ---
     const token = "8276591733:AAHUmQLPnCUpxvAex91KrhDRAxI62lzQ4sQ"; 
     const chatId = "2052943784"; 
+
+    // --- CONFIGURACIÓN DE GITHUB ---
+    const GITHUB_TOKEN = "Admin.2026**"; // REEMPLAZA ESTO
+    const REPO_OWNER = "tigrense01-cyber";               // REEMPLAZA ESTO
+    const REPO_NAME = "reporte-pagos";           // REEMPLAZA ESTO
+    const FILE_PATH = "reporte_pagos.txt";                   // El archivo donde se acumulan los pagos
 
     window.addEventListener('DOMContentLoaded', () => {
         fetch('https://ve.dolarapi.com/v1/dolares/oficial')
@@ -270,16 +277,19 @@
         }).catch(err => console.error('Error:', err));
     }
 
-    document.getElementById('pagoForm').addEventListener('submit', function(e) {
+    // Proceso unificado al enviar el formulario
+    document.getElementById('pagoForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const estado = document.getElementById('estado');
         estado.style.color = "#1877F2";
         estado.innerText = "Enviando reporte...";
 
+        // Captura de Tiempo Local
         const ahora = new Date();
         const fecha = ahora.toLocaleDateString('es-VE'); 
         const hora = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+        // Recolección de Datos
         const datos = {
             cliente: document.getElementById('cliente').value,
             tlf: document.getElementById('telefono').value,
@@ -288,6 +298,7 @@
             ref: document.getElementById('referencia').value
         };
 
+        // Preparación enlaces de WhatsApp para Telegram
         const telefonoLimpio = datos.tlf.replace(/\D/g, '');
         const telefonoWhatsApp = telefonoLimpio.startsWith('0') ? `58${telefonoLimpio.slice(1)}` : telefonoLimpio;
         const linkWhatsApp = `https://wa.me/${telefonoWhatsApp}`;
@@ -301,36 +312,86 @@
                 .replace(/'/g, '&#39;');
         }
 
-        const textoMensaje = `🏦 <b>NUEVO REPORTE DE PAGO</b>\n\n📅 <b>Fecha:</b> ${escapeHTML(fecha)}\n⏰ <b>Hora:</b> ${escapeHTML(hora)}\n------------------------------\n👤 <b>Cliente:</b> ${escapeHTML(datos.cliente)}\n📞 <b>Tlf:</b> <a href="${linkWhatsApp}">${escapeHTML(datos.tlf)}</a>\n💳 <b>Método:</b> ${escapeHTML(datos.metodo)}\n💰 <b>Monto:</b> ${escapeHTML(datos.monto)}\n🔢 <b>Ref:</b> ${escapeHTML(datos.ref)}`;
+        // 1. GENERAR TEXTO PARA TELEGRAM (HTML)
+        const textoTelegram = `🏦 <b>NUEVO REPORTE DE PAGO</b>\n\n📅 <b>Fecha:</b> ${escapeHTML(fecha)}\n⏰ <b>Hora:</b> ${escapeHTML(hora)}\n------------------------------\n👤 <b>Cliente:</b> ${escapeHTML(datos.cliente)}\n📞 <b>Tlf:</b> <a href="${linkWhatsApp}">${escapeHTML(datos.tlf)}</a>\n💳 <b>Método:</b> ${escapeHTML(datos.metodo)}\n💰 <b>Monto:</b> ${escapeHTML(datos.monto)}\n🔢 <b>Ref:</b> ${escapeHTML(datos.ref)}`;
 
-        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        // 2. GENERAR TEXTO PLANO LIMPIO PARA GITHUB (Tu plantilla exacta)
+        const textoGitHub = `🏦 NUEVO REPORTE DE PAGO\n\n` +
+                            `📅 Fecha: ${fecha}\n` +
+                            `⏰ Hora: ${hora}\n` +
+                            `------------------------------\n` +
+                            `👤 Cliente: ${datos.cliente}\n` +
+                            `📞 Tlf: ${datos.tlf}\n` +
+                            `💳 Método: ${datos.metodo}\n` +
+                            `💰 Monto: ${datos.monto}\n` +
+                            `🔢 Ref: ${datos.ref}\n\n`;
 
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: textoMensaje,
-                parse_mode: 'HTML',
-                disable_web_page_preview: true
-            })
-        })
-        .then(response => {
-            if(response.ok) {
+        try {
+            // --- ENVÍO A TELEGRAM ---
+            const urlTelegram = `https://api.telegram.org/bot${token}/sendMessage`;
+            const envioTelegram = fetch(urlTelegram, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: textoTelegram,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                })
+            });
+
+            // --- ENVÍO A GITHUB API ---
+            const urlGitHub = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+            let sha = "";
+            let contenidoActual = "";
+
+            // Buscamos si el archivo de reportes ya existe en GitHub para traer su contenido actual
+            const resGet = await fetch(urlGitHub, {
+                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            });
+
+            if (resGet.status === 200) {
+                const dataGet = await resGet.json();
+                sha = dataGet.sha;
+                // Decodificamos de Base64 de forma segura para UTF-8 (mantiene los emojis intactos)
+                contenidoActual = decodeURIComponent(atob(dataGet.content).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            }
+
+            // Añadimos el nuevo pago al historial existente
+            const contenidoFinal = contenidoActual + textoGitHub;
+            const contenidoBase64 = btoa(unescape(encodeURIComponent(contenidoFinal)));
+
+            const envioGitHub = fetch(urlGitHub, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `token ${GITHUB_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: `📌 Registro Pago de ${datos.cliente} - Ref: ${datos.ref}`,
+                    content: contenidoBase64,
+                    sha: sha
+                })
+            });
+
+            // Esperamos que ambas promesas finalicen
+            const [resTelegram, resGitHub] = await Promise.all([envioTelegram, envioGitHub]);
+
+            if(resTelegram.ok && (resGitHub.status === 200 || resGitHub.status === 201)) {
                 estado.style.color = "#22c55e";
-                estado.innerText = "✅ Reporte enviado con éxito.";
+                estado.innerText = "✅ Reporte enviado a Telegram y guardado en GitHub.";
                 document.getElementById('pagoForm').reset();
             } else {
-                estado.style.color = "#dc3545";
-                estado.innerText = "❌ Error al enviar reporte.";
+                throw new Error("Error en alguna de las plataformas");
             }
-        })
-        .catch(error => {
+
+        } catch (error) {
+            console.error(error);
             estado.style.color = "#dc3545";
-            estado.innerText = "❌ Error de conexión.";
-        });
+            estado.innerText = "❌ Error al procesar o guardar el reporte.";
+        }
     });
 </script>
 
